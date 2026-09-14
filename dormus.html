@@ -100,7 +100,16 @@
   </div>
   <div id="modal-root"></div>
   <aside id="theme-panel" class="theme-panel" hidden></aside>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <script>
+    const SUPABASE_URL = "https://mocdwfyqkfmmhibucasr.supabase.co";
+const SUPABASE_KEY = "sb_publishable_1DTruscf7BEp-GAIXKskzQ_2URnfyvr";
+
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
     const KEY='dormus-empty-v2';
     const THEME_KEY='dormus-theme-v1';
     const themes={
