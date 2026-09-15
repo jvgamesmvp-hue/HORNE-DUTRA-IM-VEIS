@@ -163,7 +163,23 @@ const supabaseClient = supabase.createClient(
      function formatDatePt(date){return date?String(date).split('-').reverse().join('/') : ''}
     const val=id=>document.getElementById(id)?.value?.trim()||'';
     const selected=(value,current)=>value===current?' selected':'';
-    function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
+    async function save(){
+  const { error } = await supabaseClient
+    .from('dormus_state')
+    .upsert({
+      id: 1,
+      dados: db,
+      atualizado_em: new Date().toISOString()
+    });
+
+  if(error){
+    console.error('Erro ao salvar no Supabase:', error);
+    alert('Não foi possível salvar os dados no banco.');
+    return;
+  }
+
+  renderAll();
+}
     function renderAll(){const active=document.querySelector('.view.active')?.id||'home';renderView(active)}
     function applyTheme(key,close=true){const t=themes[key]||themes.forest;const root=document.documentElement;root.style.setProperty('--ink',t.ink);root.style.setProperty('--ink-2',t.ink2);root.style.setProperty('--paper',t.paper);root.style.setProperty('--card',t.card);root.style.setProperty('--line',t.line);root.style.setProperty('--muted',t.muted);root.style.setProperty('--brass',t.brass);root.style.setProperty('--brass-2',t.brass2);root.style.setProperty('--green',t.green);root.style.setProperty('--red',t.red);root.style.setProperty('--shadow',`0 16px 40px ${t.ink}12`);localStorage.setItem(THEME_KEY,key);document.querySelectorAll('.theme-choice').forEach(b=>b.classList.toggle('selected',b.dataset.theme===key));if(close)document.getElementById('theme-panel').hidden=true}
     function renderThemePanel(){const panel=document.getElementById('theme-panel');panel.innerHTML=`<div class="theme-panel-head"><div><div class="theme-panel-title">Cores do sistema</div><div class="theme-panel-sub">Escolha uma paleta suave. A mudança é aplicada na hora e fica salva neste navegador.</div></div><button class="icon" onclick="toggleThemePanel()">×</button></div><div class="theme-grid">${Object.entries(themes).map(([key,t])=>`<button class="theme-choice" data-theme="${key}" onclick="applyTheme('${key}')"><span class="theme-dots"><i class="theme-dot" style="background:${t.ink}"></i><i class="theme-dot" style="background:${t.paper}"></i><i class="theme-dot" style="background:${t.brass}"></i></span><span class="theme-name">${t.name}</span></button>`).join('')}</div><div class="theme-panel-note">As informações cadastradas não são alteradas ao trocar as cores.</div>`}
