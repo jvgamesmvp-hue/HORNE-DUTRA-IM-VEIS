@@ -308,7 +308,39 @@ const supabaseClient = supabase.createClient(
      async function openPresentation(kind,id){const map={owner:'owners',tenant:'tenants',guarantor:'guarantors',property:'properties',contract:'contracts',deposit:'deposits',task:'tasks',inspection:'inspections',maintenance:'maintenance',document:'documents',note:'notes',agenda:'agenda'},r=db[map[kind]]?.find(x=>x.id===id);if(!r)return;const title=r.name||r.title||presentationLabels[kind];document.getElementById('modal-root').innerHTML=`<div class="modal-bg" onclick="closeModal(event)"><div class="modal presentation-modal" onclick="event.stopPropagation()"><div class="presentation-head"><button class="icon" style="float:right;background:#ffffff12;border-color:#ffffff30;color:#fff" onclick="closeModal()">×</button><div class="eyebrow">Visualização do cadastro</div><h2>${esc(title)}</h2><p>Apresentação completa · ${esc(presentationLabels[kind])}</p></div><div id="presentation-body" class="presentation-body"><div class="empty">Carregando informações...</div></div></div></div>`;const files=await listAttachments(kind,id),body=document.getElementById('presentation-body');if(!body)return;const content=kind==='property'?propertyPresentation(r,files):kind==='inspection'?inspectionPresentation(r):genericPresentation(kind,r,files);body.innerHTML=content+(kind==='inspection'?'':`<div class="showcase-section"><h3>Arquivos e fotos</h3>${presentationFiles(files)}</div>`)+`<div class="presentation-actions"><button class="button button-primary" onclick="openModal('${kind}','${id}')">Editar cadastro</button>${kind==='inspection'?`<button class="button button-brass" onclick="printInspectionReport('${esc(id)}')">Imprimir laudo</button>`:''}<button class="button button-quiet" onclick="closeModal()">Fechar</button></div>`}
       function printInspectionReport(id){const r=db.inspections.find(x=>x.id===id);if(!r)return;const sheet=document.getElementById('print-area');sheet.innerHTML=inspectionReportHtml(r);setTimeout(()=>{window.print();setTimeout(()=>{sheet.innerHTML=''},700)},50)}
       async function openPresentation(kind,id){const map={owner:'owners',tenant:'tenants',guarantor:'guarantors',property:'properties',contract:'contracts',deposit:'deposits',task:'tasks',inspection:'inspections',maintenance:'maintenance',document:'documents',note:'notes',agenda:'agenda'},r=db[map[kind]]?.find(x=>x.id===id);if(!r)return;const title=r.name||r.title||presentationLabels[kind];document.getElementById('modal-root').innerHTML=`<div class="modal-bg" onclick="closeModal(event)"><div class="modal presentation-modal" onclick="event.stopPropagation()"><div class="presentation-head"><button class="icon" style="float:right;background:#ffffff12;border-color:#ffffff30;color:#fff" onclick="closeModal()">×</button><div class="eyebrow">Visualização do cadastro</div><h2>${esc(title)}</h2><p>Apresentação completa · ${esc(presentationLabels[kind])}</p></div><div id="presentation-body" class="presentation-body"><div class="empty">Carregando informações...</div></div></div></div>`;const files=await listAttachments(kind,id),body=document.getElementById('presentation-body');if(!body)return;const content=kind==='property'?propertyPresentation(r,files):kind==='inspection'?inspectionPresentation(r):genericPresentation(kind,r,files),inspectionFiles=kind==='inspection'?`<div class="showcase-section"><h3>Fotos e documentos da vistoria</h3>${presentationFiles(files)}</div>`:'';body.innerHTML=content+inspectionFiles+`<div class="presentation-actions"><button class="button button-primary" onclick="openModal('${kind}','${id}')">Editar cadastro</button>${kind==='inspection'?`<button class="button button-brass" onclick="printInspectionReport('${esc(id)}')">Imprimir laudo</button>`:''}<button class="button button-quiet" onclick="closeModal()">Fechar</button></div>`}
-      renderThemePanel();applyTheme(localStorage.getItem(THEME_KEY)||'forest',false);renderAll();
+      async function loadDbFromSupabase(){
+  const { data, error } = await supabaseClient
+    .from('dormus_state')
+    .select('dados')
+    .eq('id', 1)
+    .maybeSingle();
+
+  if(error) throw error;
+
+  if(data?.dados){
+    db = {...blank, ...data.dados};
+
+    Object.keys(blank).forEach(key=>{
+      if(!Array.isArray(db[key])) db[key]=[];
+    });
+  }
+}
+
+async function initDormus(){
+  renderThemePanel();
+  applyTheme(localStorage.getItem(THEME_KEY)||'forest',false);
+
+  try{
+    await loadDbFromSupabase();
+  }catch(error){
+    console.error('Erro ao carregar o Dormus:',error);
+    alert('Não foi possível carregar os dados do banco.');
+  }
+
+  renderAll();
+}
+
+initDormus();
   </script>
 </body>
 </html>
